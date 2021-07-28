@@ -1,0 +1,7 @@
+version: "3.3"
+
+services:
+  mqtt:
+    image: mqtt:v1.0.0 
+    command: ./mqtt -infurl http://192.168.2.60:8086 -mqttip yang5896336.tpddns.cn -mqttport 1883 -username yang -password yang@5896336 
+    restart: always

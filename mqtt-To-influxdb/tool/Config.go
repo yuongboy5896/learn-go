@@ -13,7 +13,9 @@ type Config struct {
 	AppPort string `json:"app_port"`
 
 	Database    DatabaseConfig `json:"database"`
+	Mqtt        MqttConfig     `json:"mqttconfig"`
 	RedisConfig RedisConfig    `json:"redis_config"`
+	Infludb     InfludbConfig  `json:"infludb"`
 }
 
 type DatabaseConfig struct {
@@ -25,6 +27,19 @@ type DatabaseConfig struct {
 	DbName   string `json:"db_name"`
 	Charset  string `json:"charset"`
 	ShowSql  bool   `json:"show_sql"`
+}
+type InfludbConfig struct {
+	Infurl string `json:"infurl"`
+	Token  string `json:"token"`
+}
+
+//
+type MqttConfig struct {
+	Mqttip    string `json:"mqttip"`
+	Mqttport  int    `json:"mqttport"`
+	MqttUname string `json:"mqttUname"`
+	MqttPwd   string `json:"mqttPwd"`
+	Clientid  string `json:"clientid"`
 }
 
 //Redis属性定义

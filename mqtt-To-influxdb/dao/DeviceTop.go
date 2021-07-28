@@ -26,7 +26,7 @@ func (DevIoT *DeviceIoT) QuerydeviceIots() ([]model.IOT_DeviceTopic, error) {
 //按类型从数据库中查询所有topic
 func (DevIoT *DeviceIoT) QuerydeviceIotsByType() ([]model.IOT_DeviceTopic, error) {
 	var deviceIots []model.IOT_DeviceTopic
-	if err := DevIoT.Engine.Where("TopicType = 1 and FunctionType = 7").Find(&deviceIots); err != nil {
+	if err := DevIoT.Engine.Where("TopicType = 1 and FunctionType = 7 and OptAuthType =0").Find(&deviceIots); err != nil {
 		return nil, err
 	}
 	return deviceIots, nil

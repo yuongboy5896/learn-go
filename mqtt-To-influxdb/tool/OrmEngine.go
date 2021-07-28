@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"example.com/m/model"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"xorm.io/core"
@@ -24,7 +23,8 @@ func OrmEngine(cfg *Config) (*Orm, error) {
 	engine.SetMapper(core.SameMapper{})
 	//engine.SetMapper(names.GonicMapper{})
 	engine.ShowSQL(database.ShowSql)
-	err = engine.Sync2(new(model.IOT_DeviceTopic))
+	//err = engine.Sync2(new(model.IOT_DeviceTopic))
+	err = engine.Sync2()
 	if err != nil {
 		return nil, err
 	}
