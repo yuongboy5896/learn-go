@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"example.com/m/dao"
+	//"example.com/m/dao"
 	"example.com/m/model"
 	"example.com/m/tool"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -55,6 +55,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var IOTPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	Payloadstr := string(msg.Payload())
+	if !strings.Contains(Payloadstr, "post") {
+		return
+	}
 	topic := strings.Split(msg.Topic(), "/")
 	var deviceName string
 	if len(topic) > 3 {
@@ -63,8 +66,7 @@ var IOTPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Messag
 		println("没有获取设备名称")
 		return
 	}
-	fmt.Printf("设备名称 %s\n", deviceName)
-	//string_slice := strings.Split(Payloadstr, "===========")
+	//fmt.Printf("设备名称 %s\n", deviceName)
 	string_slice := strings.Split(Payloadstr, "==========")
 	var data map[string]interface{}
 	if len(string_slice) > 1 {
@@ -101,7 +103,6 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	//fmt.Printf("Connect lost: %v", err)
 	if err != nil {
 		quit = true
 		fmt.Printf("Connect lost: %v", err)
@@ -115,38 +116,20 @@ func main() {
 	if err != nil {
 		println(err)
 	}
-	//
-	_, err = tool.OrmEngine(cfg)
-	if err != nil {
-		println(err)
-		return
-	}
-	deviceIoTDao := dao.NewDeviceIoTDao()
-	deviceTops, err := deviceIoTDao.QuerydeviceIotsByType()
-	if err != nil {
-		println(err)
-		return
-	}
-	fmt.Println(len(deviceTops))
-	//flag.Parse()
-	//fmt.Println(os.Args)
-
-	//infurl := flag.String("infurl", "http://192.168.2.60:8086", "http url")
-	//fmt.Println(infurl)
-	//mqttip := flag.String("mqttip", "192.168.48.100", "mqttip")
-	//mqttport := flag.Int("mqttport", 1883, "mqttport")
-	//username := flag.String("username", "thpower", "username")
-	//password := flag.String("password", "Thp@IOT12345678", "password")
-	//clientid := flag.String("clientid", "123345455", "clientid")
-
-	//var stoken string
-	//fmt.Printf("mqttip %s \n", *mqttip)
-	//flag.StringVar(&stoken, "token", "zwvS0JXTQU2LUiEnWCmLjr6mq_E1UPJagrpePLalFO-SvsmVxKFoC-f1oDZDTU_PTuIGKiVuseFQIn2OR9YFvw==", "token")
-
-	//influxdb2
-	//const token = stoken
-	//const bucket = "devops"
-	//const org = "devops"
+	/*
+		_, err = tool.OrmEngine(cfg)
+		if err != nil {
+			println(err)
+			return
+		}
+		deviceIoTDao := dao.NewDeviceIoTDao()
+		deviceTops, err := deviceIoTDao.QuerydeviceIotsByType()
+		if err != nil {
+			println(err)
+			return
+		}
+		fmt.Println(len(deviceTops))
+	*/
 	influxdb = influxdb2.NewClient(cfg.Infludb.Infurl, cfg.Infludb.Token)
 	defer influxdb.Close()
 
@@ -160,21 +143,22 @@ func main() {
 	//opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.SetDefaultPublishHandler(IOTPubHandler)
 	opts.OnConnect = connectHandler
+	opts.ConnectTimeout = 3 * time.Minute
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
+
 	filters := make(map[string]byte)
-	for i := 0; i < len(deviceTops); i++ {
-		filters[deviceTops[i].TopicName] = 1
-		//subIot(client, deviceTops[i].TopicName)
-	}
-	//sub(client)
+	//filters[""] = 1
+	filters["/sys/#"] = 1
+
 	subIotMultiple(client, filters)
 	for {
-		if quit {
+		if !client.IsConnected() {
 			client.Disconnect(250)
+			fmt.Println("程序退出")
 			os.Exit(3)
 		}
 	}
@@ -182,21 +166,7 @@ func main() {
 	//client.Disconnect(250)
 }
 
-/*
-func sub(client mqtt.Client) {
-	topic := "test"
-	token := client.Subscribe(topic, 1, nil)
-	token.Wait()
-	fmt.Printf("Subscribed to topic: %s", topic)
-}
-*/
 func subIotMultiple(client mqtt.Client, filters map[string]byte) {
 	token := client.SubscribeMultiple(filters, nil)
 	token.Wait()
 }
-
-//func subIot(client mqtt.Client, topic string) {
-//	token := client.SubscribeMultiple(topic, 1, nil)
-//token.Wait()
-//fmt.Printf("Subscribed to topic: %s \n", topic)
-//}

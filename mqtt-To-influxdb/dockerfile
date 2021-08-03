@@ -1,7 +1,7 @@
 from centos
 RUN PATH="/home/work:$PATH"
 RUN export LD_LIBRARY_PATH PATH
-ADD mqtt /home/work/mqtt
+ADD mqtt2influxdb /home/work/mqtt2influxdb
 WORKDIR /home/work
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
