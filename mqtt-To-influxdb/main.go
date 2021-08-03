@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	//"example.com/m/dao"
 	"example.com/m/model"
 	"example.com/m/tool"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -53,9 +52,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 //
 
 var IOTPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	//fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	Payloadstr := string(msg.Payload())
-	if !strings.Contains(Payloadstr, "post") {
+	if !strings.Contains(Payloadstr, "thing/event/property/post") {
 		return
 	}
 	topic := strings.Split(msg.Topic(), "/")
@@ -116,20 +115,6 @@ func main() {
 	if err != nil {
 		println(err)
 	}
-	/*
-		_, err = tool.OrmEngine(cfg)
-		if err != nil {
-			println(err)
-			return
-		}
-		deviceIoTDao := dao.NewDeviceIoTDao()
-		deviceTops, err := deviceIoTDao.QuerydeviceIotsByType()
-		if err != nil {
-			println(err)
-			return
-		}
-		fmt.Println(len(deviceTops))
-	*/
 	influxdb = influxdb2.NewClient(cfg.Infludb.Infurl, cfg.Infludb.Token)
 	defer influxdb.Close()
 
@@ -151,7 +136,6 @@ func main() {
 	}
 
 	filters := make(map[string]byte)
-	//filters[""] = 1
 	filters["/sys/#"] = 1
 
 	subIotMultiple(client, filters)
@@ -162,8 +146,6 @@ func main() {
 			os.Exit(3)
 		}
 	}
-
-	//client.Disconnect(250)
 }
 
 func subIotMultiple(client mqtt.Client, filters map[string]byte) {
