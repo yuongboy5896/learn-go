@@ -52,14 +52,15 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 //
 
 var IOTPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	//fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 	Payloadstr := string(msg.Payload())
-	if !strings.Contains(Payloadstr, "thing/event/property/post") {
+	if !strings.Contains(Payloadstr, "post") {
+		fmt.Println("数据不正确")
 		return
 	}
 	topic := strings.Split(msg.Topic(), "/")
 	var deviceName string
-	if len(topic) > 3 {
+	if len(topic) > 6 {
 		deviceName = topic[3]
 	} else {
 		println("没有获取设备名称")
