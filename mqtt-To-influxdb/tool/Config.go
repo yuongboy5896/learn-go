@@ -40,6 +40,7 @@ type MqttConfig struct {
 	MqttUname string `json:"mqttUname"`
 	MqttPwd   string `json:"mqttPwd"`
 	Clientid  string `json:"clientid"`
+	Bugger    bool   `json:"bugger"`
 }
 
 //Redis属性定义

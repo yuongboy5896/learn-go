@@ -18,9 +18,12 @@ import (
 //
 var quit = false
 var influxdb influxdb2.Client
-
+var logs = true
 var IOTPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	if logs {
+		fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	}
+
 	Payloadstr := string(msg.Payload())
 	Topicstr := string(msg.Topic())
 	insertInfluxdb(Payloadstr, Topicstr)
@@ -59,9 +62,6 @@ func insertInfluxdb(Payloadstr string, Topicstr string) {
 
 	params := data["params"].(map[string]interface{})
 	if params != nil {
-
-		influxdb = influxdb2.NewClient(Infurl, Token)
-		defer influxdb.Close()
 		writeAPI := influxdb.WriteAPI(org, bucket)
 		p := influxdb2.NewPoint(deviceName,
 			tagmap,
@@ -84,20 +84,17 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 		fmt.Printf("Connect lost: %v", err)
 	}
 }
-var Infurl string
-var Token string
 
 func main() {
-
+	timeout, _ := time.ParseDuration("10s")
 	// 初始化配置
 	cfg, err := tool.ParseConfig("./config/app.json")
 	if err != nil {
 		println(err)
 	}
-	Infurl = cfg.Infludb.Infurl
-	Token = cfg.Infludb.Token
-	//influxdb = influxdb2.NewClient(cfg.Infludb.Infurl, cfg.Infludb.Token)
-	//defer influxdb.Close()
+	logs = cfg.Mqtt.Bugger
+	influxdb = influxdb2.NewClient(cfg.Infludb.Infurl, cfg.Infludb.Token)
+	defer influxdb.Close()
 
 	var broker = cfg.Mqtt.Mqttip
 	var port = cfg.Mqtt.Mqttport
@@ -111,13 +108,20 @@ func main() {
 	opts.OnConnect = connectHandler
 	opts.ConnectTimeout = 3 * time.Minute
 	opts.OnConnectionLost = connectLostHandler
+	opts.SetAutoReconnect(true).SetMaxReconnectInterval(10 * time.Second)
+	opts.SetConnectRetry(true)
+	opts.SetConnectTimeout(timeout)
+	opts.SetPingTimeout(6 * timeout)
+	opts.SetKeepAlive(3 * timeout)
+
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
 
 	filters := make(map[string]byte)
-	filters["/sys/#"] = 1
+	//filters["/sys/#"] = 1
+	filters["/sys/+/+/thing/event/property/post_reply"] = 1
 
 	subIotMultiple(client, filters)
 	for {
